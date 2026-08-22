@@ -38,6 +38,18 @@ CSS = """
   .reco .lb { font-size:11.5px; font-weight:700; letter-spacing:.06em; color:#2c5f8a; }
   .reco .tx { font-size:16px; font-weight:600; margin:6px 0 8px; white-space:pre-line; }
   .reco .wy { font-size:13px; color:#5a656f; line-height:1.6; }
+  .req { border-left:3px solid #d9dfe5; background:#fafbfc; padding:9px 14px;
+         margin:6px 0; border-radius:0 6px 6px 0; }
+  .req.ok { border-left-color:#2c8a5f; background:#f2f9f5; }
+  .req.no { border-left-color:#c25a4a; background:#fdf5f4; }
+  .req b { font-size:14.5px; }
+  .req-why { display:block; font-size:13px; color:#5a656f; line-height:1.6; margin-top:3px; }
+  .kw-table { width:100%; border-collapse:collapse; font-size:14px; margin:6px 0 16px; }
+  .kw-table th { text-align:left; font-size:12px; color:#8b959e; font-weight:600;
+                 border-bottom:1px solid #d9dfe5; padding:6px 8px; }
+  .kw-table td { border-bottom:1px solid #eef1f4; padding:7px 8px; }
+  .kw-table .k-w { font-weight:600; color:#14181d; }
+  .kw-table .k-kind { color:#8b959e; font-size:12.5px; width:60px; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)

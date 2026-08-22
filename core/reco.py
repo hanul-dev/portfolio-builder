@@ -375,8 +375,21 @@ def suggest(doc, target):
         emphasis[pr["id"]] = txt
 
     # ---------- 체크리스트 ----------
-    # 구체적인 직무 역량부터, 너무 길어지지 않게 다섯 개까지만
-    checklist = [gap_advice(doc, t, jd_tags) for t in _sort_by_specificity(res["miss"])[:5]]
+    # 공고의 '필수 → 담당업무 → 우대' 순서를 그대로 따라간다.
+    # 우대 항목을 먼저 챙기다 필수를 놓치면 안 되기 때문이다.
+    from . import jd as _jd
+    req = _jd.requirements(doc, target.get("jd_text", ""), res["my_tags"])
+    ordered = []
+    for g in req["groups"]:
+        for tag in _sort_by_specificity(g["miss"]):
+            ordered.append((g["label"], tag))
+    if not ordered:
+        ordered = [("", t) for t in _sort_by_specificity(res["miss"])]
+
+    checklist = []
+    for label, tag in ordered[:5]:
+        prefix = "[%s] " % label if label else ""
+        checklist.append(prefix + gap_advice(doc, tag, jd_tags))
     if not person.get("photo"):
         checklist.append("증명사진이 없습니다. 내 정보 탭에서 사진을 올리면 표지와 프로필 슬라이드가 완성됩니다.")
     if len(b["projects"]) < 3:
@@ -384,10 +397,14 @@ def suggest(doc, target):
     if not (b["custom"].get("items")):
         checklist.append("자유 섹션이 비어 있습니다. 직무에 대한 본인만의 관점을 한 항목이라도 쓰면 "
                          "면접 질문의 출발점이 됩니다.")
-    if res["missing_keywords"]:
-        top_kw = ", ".join(w for w, _ in res["missing_keywords"][:5])
-        checklist.append("공고에는 자주 나오지만 내 포트폴리오에는 한 번도 안 나오는 단어: %s. "
-                         "억지로 넣을 필요는 없지만, 실제 해본 일이라면 그 단어로 바꿔 쓰세요." % top_kw)
+    # 공고가 쓰는 표현 중 아직 안 쓰고 있는 것 (공고 분석 탭과 같은 기준)
+    plan = _jd.keyword_plan(doc, target.get("jd_text", ""), schema.my_text(doc, target),
+                            my_tags=res["my_tags"])
+    unused = [k["label"] for k in plan if not k["used"]][:5]
+    if unused:
+        checklist.append("공고가 쓰는 표현인데 내 포트폴리오에는 없는 말: %s. "
+                         "억지로 넣을 필요는 없지만, 실제 해본 일이라면 그 회사가 쓰는 단어로 "
+                         "바꿔 쓰세요." % ", ".join(unused))
 
     return {
         "analysis": res,
