@@ -1,0 +1,32 @@
+# ---- 개인 정보 ----
+# 내 이력 저장본과 로컬 모드 표시 파일은 data/.gitignore 에서도 막고 있습니다.
+data/my_portfolio.json
+data/.local
+*.local.json
+
+# 내려받은 결과물
+*.pptx
+*.html
+!static/*.html
+
+# ---- 파이썬 ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ---- 에디터 · OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 스트림릿 ----
+# 비밀값은 절대 커밋하지 않습니다
+.streamlit/secrets.toml
+
+# 이전 버전 데이터 이사용 · 공개 저장소에는 넣지 않습니다
+tools/
