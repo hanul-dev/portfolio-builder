@@ -13,7 +13,7 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core import schema, io_utils            # noqa: E402
+from core import schema, io_utils, browser_store   # noqa: E402
 from views import common as C                # noqa: E402
 from views import (v_auto, v_start, v_basics, v_career,  # noqa: E402
                    v_target, v_tailor, v_output)
@@ -50,9 +50,10 @@ def boot():
     st.session_state.nonce = 0
     st.session_state.dirty = False
     st.session_state.loaded_from = None
+    st.session_state.autosave = True
 
-    # 내 PC 에서 혼자 쓸 때만 저장본을 자동으로 불러온다.
-    # 여러 사람이 쓰는 서버에서는 남의 이력이 보이면 안 되므로 건너뛴다.
+    # 내 PC 에서 혼자 쓸 때만 서버 파일을 읽는다.
+    # 여러 사람이 쓰는 주소에서는 남의 이력이 보이면 안 되므로 건너뛴다.
     local = io_utils.load_file(io_utils.LOCAL_PATH) if io_utils.is_local_mode() else None
     if local:
         st.session_state.doc = local
@@ -61,7 +62,36 @@ def boot():
         st.session_state.doc = schema.empty_doc()
 
 
+def restore_from_browser():
+    """브라우저에 저장해 둔 내용을 되살린다.
+
+    컴포넌트가 값을 늦게 넘겨주기도 해서, 아직 아무것도 안 만진 상태라면
+    여러 번에 걸쳐 다시 시도한다.
+    """
+    if st.session_state.get("browser_restored") or st.session_state.get("loaded_from"):
+        return
+    d = st.session_state.doc
+    untouched = not (d["base"]["projects"] or d["base"]["experience"]
+                     or d["base"]["person"].get("name") or st.session_state.get("dirty"))
+    if not untouched:
+        st.session_state.browser_restored = True     # 이미 작업 중이면 덮지 않는다
+        return
+
+    doc, err = browser_store.restore()
+    if err:
+        st.session_state.browser_restore_error = err
+        st.session_state.browser_restored = True
+        return
+    if doc:
+        st.session_state.doc = doc
+        st.session_state.loaded_from = "browser"
+        st.session_state.browser_restored = True
+        C.bump()
+        st.rerun()
+
+
 boot()
+restore_from_browser()
 
 
 # ---------------------------------------------------------------- 사이드바
@@ -118,13 +148,38 @@ def sidebar():
         st.download_button("💾 JSON 내보내기", io_utils.doc_to_json(d),
                            file_name=stem + ".json", mime="application/json",
                            use_container_width=True,
-                           help="브라우저를 닫으면 작업 내용이 사라집니다. 자주 내려받아 두세요.")
-        if st.session_state.get("dirty"):
-            st.caption("⚠️ 저장하지 않은 변경이 있습니다")
+                           help="다른 컴퓨터로 옮기거나 백업할 때 쓰세요.")
 
         st.divider()
-        st.caption("입력한 내용은 이 브라우저 세션에만 있고 서버에 저장되지 않습니다. "
+        _autosave_box(d)
+
+
+def _autosave_box(d):
+    """자동 저장 상태. 저장은 이 사람 브라우저 안에서만 일어난다."""
+    if not browser_store.available():
+        st.caption("이 브라우저에서는 자동 저장을 쓸 수 없습니다. "
                    "JSON 으로 내려받아 보관하세요.")
+        return
+
+    on = st.checkbox("이 브라우저에 자동 저장", value=st.session_state.get("autosave", True),
+                     help="작업 내용을 이 브라우저에만 저장합니다. 서버에는 남지 않고, "
+                          "다른 사람에게도 보이지 않습니다.")
+    st.session_state.autosave = on
+
+    if browser_store.too_big(d):
+        st.caption("⚠️ 내용이 커서(%.1fMB) 자동 저장을 건너뜁니다. JSON 으로 내려받아 두세요."
+                   % (browser_store.payload_size(d) / 1_000_000))
+        return
+
+    if on:
+        if browser_store.autosave(d):
+            st.caption("✅ 저장됨")
+        elif browser_store.changed_since_save(d):
+            st.caption("저장 중…")
+        else:
+            st.caption("✅ 저장됨")
+    elif st.session_state.get("dirty"):
+        st.caption("⚠️ 저장하지 않은 변경이 있습니다")
 
 
 # ---------------------------------------------------------------- 페이지

@@ -7,7 +7,7 @@ import os
 
 import streamlit as st
 
-from core import schema, io_utils
+from core import schema, io_utils, browser_store
 from views import common as C
 
 
@@ -106,30 +106,49 @@ def render():
 
     # ---------------- 저장 ----------------
     st.markdown("#### 저장")
-    st.caption("Streamlit 은 브라우저를 닫으면 작업 내용이 사라집니다. "
-               "JSON 으로 내려받아 두면 다음에 그대로 이어서 쓸 수 있습니다.")
-    c1, c2 = st.columns(2)
+    st.caption("작업 내용은 **이 브라우저 안에만** 저장됩니다. 서버에는 남지 않고, "
+               "같은 주소에 접속한 다른 사람에게도 보이지 않습니다.")
+
+    c1, c2, c3 = st.columns(3)
     with c1:
+        if browser_store.available():
+            if st.button("이 브라우저에 저장", use_container_width=True, type="primary"):
+                ok, msg = browser_store.save(d, widget_key="save_now")
+                if ok:
+                    st.session_state.dirty = False
+                    st.success("저장했습니다. 다음에 이 브라우저로 들어오면 그대로 이어집니다.")
+                else:
+                    st.error(msg)
+        else:
+            st.button("이 브라우저에 저장", use_container_width=True, disabled=True,
+                      help="이 브라우저에서는 쓸 수 없습니다. JSON 으로 내려받아 보관하세요.")
+    with c2:
         st.download_button("JSON 파일로 내려받기", io_utils.doc_to_json(d),
                            file_name=schema.file_stem(d) + ".json",
-                           mime="application/json", use_container_width=True, type="primary")
-    with c2:
-        if io_utils.is_local_mode():
-            can_write = os.access(os.path.dirname(io_utils.LOCAL_PATH) or ".", os.W_OK)
-            if st.button("이 컴퓨터에 저장", use_container_width=True, disabled=not can_write,
-                         help="app/data/my_portfolio.json 에 저장하고, 다음 실행 때 자동으로 "
-                              "불러옵니다. 내 PC 에서 혼자 쓸 때만 쓰는 기능입니다."):
-                try:
-                    io_utils.save_file(d, io_utils.LOCAL_PATH)
-                    st.session_state.dirty = False
-                    st.success("저장했습니다: app/data/my_portfolio.json")
-                except Exception as exc:
-                    st.error("저장하지 못했습니다: %s" % exc)
-        else:
-            st.button("이 컴퓨터에 저장", use_container_width=True, disabled=True,
-                      help="여러 사람이 함께 쓰는 주소에서는 꺼져 있습니다. "
-                           "서버에 저장하면 다음 접속자에게 내 이력이 보이기 때문입니다.")
-            st.caption("공유 주소에서는 서버 저장이 막혀 있습니다. JSON 으로 내려받아 보관하세요.")
+                           mime="application/json", use_container_width=True)
+    with c3:
+        if st.button("브라우저 저장 내용 지우기", use_container_width=True,
+                     help="공용 PC 를 썼다면 끝나고 눌러 주세요."):
+            browser_store.clear(widget_key="clear_now")
+            st.session_state.autosave = False
+            st.warning("지웠습니다. 지금 화면의 내용은 그대로 남아 있으니, "
+                       "필요하면 JSON 으로 내려받으세요.")
+
+    size = browser_store.payload_size(d)
+    st.caption("현재 크기 %.0f KB · 브라우저 저장 한도는 보통 5MB 입니다. "
+               "사진을 많이 넣으면 넘칠 수 있으니 중요한 작업은 JSON 으로도 받아 두세요."
+               % (size / 1000))
+
+    if io_utils.is_local_mode():
+        st.divider()
+        st.caption("**내 PC 전용** · `data/.local` 이 있어 파일 저장도 함께 켜져 있습니다.")
+        can_write = os.access(os.path.dirname(io_utils.LOCAL_PATH) or ".", os.W_OK)
+        if st.button("파일로도 저장 (app/data/my_portfolio.json)", disabled=not can_write):
+            try:
+                io_utils.save_file(d, io_utils.LOCAL_PATH)
+                st.success("저장했습니다: app/data/my_portfolio.json")
+            except Exception as exc:
+                st.error("저장하지 못했습니다: %s" % exc)
 
     with st.expander("이 앱은 어떻게 쓰나요?"):
         st.markdown("""
