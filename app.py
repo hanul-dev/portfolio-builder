@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core import schema, io_utils            # noqa: E402
 from views import common as C                # noqa: E402
-from views import (v_start, v_basics, v_career,  # noqa: E402
+from views import (v_auto, v_start, v_basics, v_career,  # noqa: E402
                    v_target, v_tailor, v_output)
 
 st.set_page_config(page_title="포트폴리오 빌더", page_icon="📄",
@@ -129,12 +129,13 @@ def sidebar():
 
 # ---------------------------------------------------------------- 페이지
 pages = [
-    st.Page(v_start.render, title="시작하기", icon=":material/home:", url_path="start", default=True),
+    st.Page(v_auto.render, title="자동 만들기", icon=":material/bolt:", url_path="auto", default=True),
     st.Page(v_basics.render, title="내 정보", icon=":material/badge:", url_path="basics"),
     st.Page(v_career.render, title="경력 · 프로젝트", icon=":material/work:", url_path="career"),
     st.Page(v_target.render, title="공고 분석", icon=":material/search:", url_path="jd"),
     st.Page(v_tailor.render, title="추천 수정안", icon=":material/auto_fix_high:", url_path="tailor"),
     st.Page(v_output.render, title="미리보기 · 다운로드", icon=":material/download:", url_path="output"),
+    st.Page(v_start.render, title="불러오기 · 저장", icon=":material/save:", url_path="save"),
 ]
 nav = st.navigation(pages)   # 사이드바에 메뉴가 먼저 그려진다
 nav.run()                    # 본문 (여기서 doc 이 갱신된다)

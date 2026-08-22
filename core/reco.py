@@ -343,6 +343,16 @@ def suggest(doc, target):
         if f["metric_value"] and f["metric_label"]:
             metrics.append({"value": f["metric_value"], "label": f["metric_label"]})
     if len(metrics) < 4:
+        # 프로젝트에 지표가 없으면 경력 요약 문장에서 숫자를 찾아 쓴다
+        from .parse_resume import metric_from
+        for ex in exps:
+            value, label = metric_from(ex.get("summary", ""))
+            if value and not any(m["value"] == value for m in metrics):
+                metrics.append({"value": value, "label": label or ex.get("role", "성과")})
+            if len(metrics) >= 4:
+                break
+
+    if len(metrics) < 4:
         if len(b["languages"]) >= 2:
             metrics.append({"value": "%d개 국어" % len(b["languages"]), "label": "구사 언어"})
         if b["awards"]:
