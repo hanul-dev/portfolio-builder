@@ -13,7 +13,7 @@ import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core import schema, io_utils, browser_store   # noqa: E402
+from core import schema, io_utils, browser_store, auth   # noqa: E402
 from views import common as C                # noqa: E402
 from views import (v_auto, v_start, v_basics, v_career,  # noqa: E402
                    v_target, v_tailor, v_output)
@@ -109,7 +109,9 @@ def restore_from_browser():
 
 
 boot()
-restore_from_browser()
+if auth.passed():
+    # 비밀번호를 통과하기 전에는 저장된 내용을 불러오지 않는다
+    restore_from_browser()
 
 
 # ---------------------------------------------------------------- 사이드바
@@ -170,6 +172,7 @@ def sidebar():
 
         st.divider()
         _autosave_box(d)
+        auth.logout_button()
 
 
 def _autosave_box(d):
@@ -211,5 +214,6 @@ pages = [
     st.Page(v_start.render, title="불러오기 · 저장", icon=":material/save:", url_path="save"),
 ]
 nav = st.navigation(pages)   # 사이드바에 메뉴가 먼저 그려진다
-nav.run()                    # 본문 (여기서 doc 이 갱신된다)
-sidebar()                    # 갱신된 doc 으로 사이드바 요약을 그린다
+nav.run()                    # 본문 (잠겨 있으면 각 화면이 잠금 화면을 그린다)
+if auth.passed():
+    sidebar()                # 통과한 뒤에만 사이드바 내용을 그린다

@@ -133,6 +133,8 @@ def _keyword_table(plan):
 
 
 def render():
+    if C.locked():
+        return
     d = C.doc()
     t = C.target()
     C.page_head("공고 분석", "공고를 필수 · 담당업무 · 우대로 나눠 읽고, "

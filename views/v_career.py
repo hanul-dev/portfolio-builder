@@ -111,6 +111,8 @@ def _project_tab(b):
 
 
 def render():
+    if C.locked():
+        return
     d = C.doc()
     b = d["base"]
     C.page_head("경력 · 프로젝트", "지원처별 순서와 노출은 나중에 정합니다. 여기서는 사실만 모아 두세요.")

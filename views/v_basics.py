@@ -9,6 +9,8 @@ from views import common as C
 
 
 def render():
+    if C.locked():
+        return
     d = C.doc()
     b = d["base"]
     C.page_head("내 정보", "여기 입력한 내용이 모든 지원처에서 공유되는 원본입니다.")

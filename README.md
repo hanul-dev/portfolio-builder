@@ -216,6 +216,7 @@ core/render.py          HTML 포트폴리오 생성
 core/deck.py            PPTX 생성 (python-pptx)
 core/io_utils.py        이미지 · JSON 입출력, 로컬 모드 판별
 core/browser_store.py   브라우저(localStorage) 저장 · 접속자별 격리
+core/auth.py            비밀번호 잠금 (Secrets 로만 설정)
 views/                  화면 7개
 static/portfolio.css    결과물 스타일 (--accent 만 바꾸면 색이 전부 따라옵니다)
 data/demo.json          예시 데이터 (가상 인물)
@@ -240,6 +241,40 @@ doc
         ├── hide_numbers   구체적 수치 숨김 여부
         └── overrides      문장별 덮어쓰기
 ```
+
+## 비밀번호 잠금
+
+배포한 주소는 링크를 아는 사람 누구나 들어올 수 있습니다.
+초대한 사람만 쓰게 하려면 비밀번호를 걸어 두세요.
+
+**Streamlit Cloud → Manage app → Settings → Secrets** 에 넣습니다.
+
+```toml
+app_password = "정한_비밀번호"
+```
+
+비밀번호를 그대로 두기 싫으면 SHA-256 해시를 대신 넣어도 됩니다.
+
+```toml
+app_password_sha256 = "해시값"
+```
+
+해시는 이렇게 만듭니다.
+
+```bash
+python -c "import hashlib,getpass;print(hashlib.sha256(getpass.getpass().encode()).hexdigest())"
+```
+
+- **비밀번호는 저장소에 절대 들어가지 않습니다.** Secrets 에만 둡니다.
+- **설정을 안 하면 앱이 열리지 않고 막힙니다.** 깜빡했을 때 공개되는 쪽이 더 위험해서
+  일부러 그렇게 했습니다.
+- 통과 전에는 저장된 내용을 불러오지도, 본문을 그리지도 않습니다.
+- 통과 여부는 그 브라우저 세션에만 남습니다. 새로고침하면 다시 물어봅니다.
+  (브라우저에 남기면 그 값을 흉내 내 우회할 수 있어 일부러 안 남깁니다.)
+- 내 PC 에서는 `data/.local` 이 있으면 묻지 않습니다.
+
+비밀번호는 **한 사람씩 따로가 아니라 모두가 같은 값**을 씁니다. 사람별로 나누고 싶으면
+Streamlit Cloud 의 앱 설정에서 이메일 초대 방식(Viewer allowlist)을 쓰는 편이 낫습니다.
 
 ## 개인정보 보호
 

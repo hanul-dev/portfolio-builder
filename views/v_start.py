@@ -17,6 +17,8 @@ def _is_blank(d):
 
 
 def render():
+    if C.locked():
+        return
     d = C.doc()
     C.page_head("시작하기", "내 이력을 한 번 입력해 두면, 지원하는 회사마다 순서와 문장만 바꿔 쓸 수 있습니다.")
 

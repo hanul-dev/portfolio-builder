@@ -31,6 +31,8 @@ def _card(idx, label, text, why, on_apply, applied=False):
 
 
 def render():
+    if C.locked():
+        return
     d = C.doc()
     t = C.target()
     C.page_head("추천 수정안", "공고와 내 이력을 대조해 만든 초안입니다. 마음에 드는 것만 골라 적용하세요.")

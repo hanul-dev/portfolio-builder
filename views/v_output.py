@@ -12,6 +12,8 @@ from views import common as C
 
 
 def render():
+    if C.locked():
+        return
     d = C.doc()
     t = C.target()
     C.page_head("미리보기 · 다운로드",

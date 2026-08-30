@@ -165,3 +165,13 @@ def page_head(title, desc=""):
 
 def empty_hint(msg):
     st.info(msg, icon=":material/lightbulb:")
+
+
+def locked():
+    """비밀번호를 아직 통과하지 못했으면 True (그리고 잠금 화면을 그린다).
+
+    각 화면 맨 앞에서 호출합니다. 페이지 함수를 감싸는 방식은
+    st.navigation 이 사이드바를 못 만들게 해서 이렇게 했습니다.
+    """
+    from core import auth
+    return not auth.gate()
