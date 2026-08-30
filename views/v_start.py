@@ -35,9 +35,9 @@ def render():
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown("**JSON 불러오기**")
-        st.caption("전에 내보낸 파일을 올리면 이어서 작업합니다.")
-        up = st.file_uploader("JSON 파일", type=["json"], key=C.k("upload"),
+        st.markdown("**백업 파일 열기**")
+        st.caption("전에 백업해 둔 작업 파일을 올리면 그 시점부터 이어서 작업합니다.")
+        up = st.file_uploader("작업 파일", type=["json"], key=C.k("upload"),
                               label_visibility="collapsed")
         if up is not None:
             newdoc, err = io_utils.json_to_doc(up.read())
@@ -122,22 +122,24 @@ def render():
                     st.error(msg)
         else:
             st.button("이 브라우저에 저장", use_container_width=True, disabled=True,
-                      help="이 브라우저에서는 쓸 수 없습니다. JSON 으로 내려받아 보관하세요.")
+                      help="이 브라우저에서는 쓸 수 없습니다. 작업 파일로 내려받아 보관하세요.")
     with c2:
-        st.download_button("JSON 파일로 내려받기", io_utils.doc_to_json(d),
-                           file_name=schema.file_stem(d) + ".json",
-                           mime="application/json", use_container_width=True)
+        st.download_button("작업 파일로 내려받기", io_utils.doc_to_json(d),
+                           file_name=schema.file_stem(d) + "_작업파일.json",
+                           mime="application/json", use_container_width=True,
+                           help="다른 컴퓨터로 옮기거나, 브라우저를 지워도 잃지 않으려면 "
+                                "이 파일을 보관하세요.")
     with c3:
         if st.button("브라우저 저장 내용 지우기", use_container_width=True,
                      help="공용 PC 를 썼다면 끝나고 눌러 주세요."):
             browser_store.clear(widget_key="clear_now")
             st.session_state.autosave = False
             st.warning("지웠습니다. 지금 화면의 내용은 그대로 남아 있으니, "
-                       "필요하면 JSON 으로 내려받으세요.")
+                       "필요하면 작업 파일로 내려받으세요.")
 
     size = browser_store.payload_size(d)
     st.caption("현재 크기 %.0f KB · 브라우저 저장 한도는 보통 5MB 입니다. "
-               "사진을 많이 넣으면 넘칠 수 있으니 중요한 작업은 JSON 으로도 받아 두세요."
+               "사진을 많이 넣으면 넘칠 수 있으니 중요한 작업은 파일로도 받아 두세요."
                % (size / 1000))
 
     if io_utils.is_local_mode():
@@ -156,7 +158,7 @@ def render():
 1. **내 정보** · **경력 · 프로젝트** 에 내 이력을 한 번만 입력합니다. 여기 있는 내용이 원본이고, 지원처를 아무리 늘려도 훼손되지 않습니다.
 2. **공고 분석** 에서 지원할 회사와 공고문을 붙여넣습니다. 공고 문장에서 요구 역량을 뽑아 내 이력과 대조합니다.
 3. **추천 수정안** 에서 헤드라인 · 자기소개 · 프로젝트 순서 제안을 확인하고 원하는 것만 적용합니다. 문장은 **내가 입력한 내용으로** 만들어지므로, 없는 경력이 지어내지지 않습니다.
-4. **미리보기 · 다운로드** 에서 웹페이지(HTML) 와 발표자료(PPTX) 를 받아 갑니다.
+4. **미리보기 · 다운로드** 에서 제출용 PDF, 웹페이지, 발표자료를 받아 갑니다.
 
 지원처를 새로 만들면 1번의 이력은 그대로 두고 3번의 구성만 다시 잡으면 됩니다.
 """)

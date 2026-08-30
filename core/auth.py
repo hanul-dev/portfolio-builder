@@ -80,11 +80,14 @@ def gate():
 
     value, _hashed = configured()
 
+    from views.style import BRAND, BRAND_MARK
+
     st.markdown(
-        "<div class='gate-wrap'><div class='gate-mark'>P</div>"
-        "<h1 class='gate-title'>포트폴리오 빌더</h1>"
+        "<div class='gate-wrap'><div class='gate-mark'>%s</div>"
+        "<h1 class='gate-title'>%s</h1>"
         "<p class='gate-sub'>이력서와 채용 공고를 넣으면<br>"
-        "공고에 맞춘 포트폴리오를 만들어 드립니다.</p></div>",
+        "공고에 맞춘 포트폴리오를 만들어 드립니다.</p></div>"
+        % (BRAND_MARK, BRAND),
         unsafe_allow_html=True)
 
     if not value:

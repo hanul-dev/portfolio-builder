@@ -191,7 +191,8 @@ def _build_step():
                   or cur["base"]["person"].get("name"))
     if filled:
         st.warning("지금 입력돼 있는 내용이 **모두 지워지고** 이력서에서 읽은 내용으로 바뀝니다. "
-                   "필요하면 먼저 사이드바에서 JSON 을 내려받아 두세요.", icon=":material/warning:")
+                   "필요하면 먼저 사이드바의 **작업 내용 백업** 을 눌러 두세요.",
+                   icon=":material/warning:")
 
     if not st.button("이 내용으로 포트폴리오 만들기", type="primary", use_container_width=True):
         return
@@ -250,7 +251,7 @@ def _after_build():
 
     st.markdown("**다음으로 할 일**")
     st.markdown("""
-1. **미리보기 · 다운로드** 에서 결과를 보고 HTML · PPT 를 받으세요.
+1. **미리보기 · 다운로드** 에서 결과를 보고 PDF · 발표자료를 받으세요.
 2. 문장이 어색하면 **내 정보** · **경력 · 프로젝트** 에서 고치세요. 자동으로 읽은 결과라 다듬을 곳이 있습니다.
 3. **추천 수정안** 에서 다른 헤드라인·자기소개 후보를 볼 수 있습니다.
 """)

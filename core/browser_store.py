@@ -8,7 +8,7 @@
   - 데이터는 그 사람 브라우저 안에만 남고 서버에는 저장되지 않습니다.
   - 브라우저가 다르면(다른 PC · 시크릿창) 서로 아무것도 보이지 않습니다.
   - 용량 한도가 있어(보통 5MB) 사진을 많이 넣으면 넘칠 수 있습니다.
-    그때는 저장을 건너뛰고 JSON 내보내기를 안내합니다.
+    그때는 저장을 건너뛰고 작업 내용 백업(.json 파일)을 안내합니다.
 """
 
 from __future__ import annotations
@@ -78,12 +78,12 @@ def save(doc, widget_key="bstore_save"):
     """브라우저에 저장. -> (성공여부, 안내메시지)"""
     ls = _client()
     if ls is None:
-        return False, "이 브라우저에서는 자동 저장을 쓸 수 없습니다. JSON 으로 내려받아 보관하세요."
+        return False, "이 브라우저에서는 자동 저장을 쓸 수 없습니다. 작업 내용을 백업해 두세요."
 
     size = payload_size(doc)
     if size > SOFT_LIMIT:
         return False, ("내용이 너무 커서(%.1fMB) 브라우저에 담을 수 없습니다. "
-                       "사진을 줄이거나 JSON 으로 내려받아 보관하세요." % (size / 1_000_000))
+                       "사진을 줄이거나 작업 내용을 백업해 두세요." % (size / 1_000_000))
     try:
         ls.setItem(KEY, json.dumps(doc, ensure_ascii=False), key=widget_key)
     except Exception as exc:

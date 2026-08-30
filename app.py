@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""지원처 맞춤 포트폴리오 빌더 · Streamlit 앱.
+"""Tailor · 공고에 맞춰 다시 쓰는 포트폴리오 · Streamlit 앱.
 
     streamlit run app/app.py
 """
@@ -18,7 +18,9 @@ from views import common as C                # noqa: E402
 from views import (v_auto, v_start, v_basics, v_career,  # noqa: E402
                    v_target, v_tailor, v_output)
 
-st.set_page_config(page_title="포트폴리오 빌더", page_icon="📄",
+from views.style import BRAND, BRAND_MARK, BRAND_SUB   # noqa: E402
+
+st.set_page_config(page_title=BRAND, page_icon="📄",
                    layout="wide", initial_sidebar_state="expanded")
 
 from views.style import CSS   # noqa: E402
@@ -85,9 +87,10 @@ def sidebar():
     with st.sidebar:
         name = d["base"]["person"].get("name") or "이름 없음"
         st.markdown(
-            "<div class='brand'><div class='brand-mark'>P</div>"
-            "<div><div class='brand-name'>포트폴리오 빌더</div>"
-            "<div class='brand-sub'>공고에 맞춰 다시 쓰는 포트폴리오</div></div></div>",
+            "<div class='brand'><div class='brand-mark'>%s</div>"
+            "<div><div class='brand-name'>%s</div>"
+            "<div class='brand-sub'>%s</div></div></div>"
+            % (BRAND_MARK, BRAND, BRAND_SUB),
             unsafe_allow_html=True)
         st.markdown(
             "<div class='who'><b>%s</b><span>프로젝트 %d건 · 지원처 %d곳</span></div>"
@@ -137,10 +140,14 @@ def sidebar():
 
         st.divider()
         stem = schema.file_stem(d)
-        st.download_button("💾 JSON 내보내기", io_utils.doc_to_json(d),
-                           file_name=stem + ".json", mime="application/json",
+        st.download_button("작업 내용 백업", io_utils.doc_to_json(d),
+                           file_name=stem + "_작업파일.json",
+                           mime="application/json", icon=":material/backup:",
                            use_container_width=True,
-                           help="다른 컴퓨터로 옮기거나 백업할 때 쓰세요.")
+                           help="지금까지 입력한 내용을 파일 하나로 내려받습니다. "
+                                "다른 컴퓨터에서 이어서 작업할 때 이 파일을 올리면 "
+                                "그대로 복구됩니다. 완성본이 아니라 '작업 중인 원고'입니다.")
+        st.caption("완성본(PDF · PPT)은 **미리보기 · 다운로드** 에서 받습니다.")
 
         st.divider()
         _autosave_box(d)
@@ -151,7 +158,7 @@ def _autosave_box(d):
     """자동 저장 상태. 저장은 이 사람 브라우저 안에서만 일어난다."""
     if not browser_store.available():
         st.caption("이 브라우저에서는 자동 저장을 쓸 수 없습니다. "
-                   "JSON 으로 내려받아 보관하세요.")
+                   "위의 **작업 내용 백업** 으로 내려받아 두세요.")
         return
 
     on = st.checkbox("이 브라우저에 자동 저장", value=st.session_state.get("autosave", True),
@@ -160,7 +167,7 @@ def _autosave_box(d):
     st.session_state.autosave = on
 
     if browser_store.too_big(d):
-        st.caption("⚠️ 내용이 커서(%.1fMB) 자동 저장을 건너뜁니다. JSON 으로 내려받아 두세요."
+        st.caption("⚠️ 내용이 커서(%.1fMB) 자동 저장을 건너뜁니다. 작업 내용을 백업해 두세요."
                    % (browser_store.payload_size(d) / 1_000_000))
         return
 

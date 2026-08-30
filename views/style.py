@@ -11,6 +11,11 @@ Streamlit 내부 클래스명(st-emotion-cache-…)은 버전마다 바뀌므로
 INK = "#14181d"
 BLUE = "#2c5f8a"
 
+# 이름은 여기 한 곳에서만 고치면 화면 전체에 반영됩니다.
+BRAND = "Tailor"
+BRAND_MARK = "T"
+BRAND_SUB = "공고에 맞춰 다시 쓰는 포트폴리오"
+
 CSS = """
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
@@ -29,6 +34,17 @@ html, body, [class*="st-"], button, input, textarea, select {
               "Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif !important;
 }
 body { word-break: keep-all; }
+
+/* Streamlit 의 아이콘은 '글꼴이 곧 그림' 입니다. 위에서 글꼴을 강제로 바꾸면
+   그림 대신 bolt · lightbulb 같은 이름이 글자로 튀어나오므로 반드시 되돌립니다. */
+[data-testid="stIconMaterial"], span[data-testid="stIconMaterial"] {
+  font-family:"Material Symbols Rounded" !important;
+  font-weight:400 !important; font-style:normal !important;
+  letter-spacing:normal !important; text-transform:none !important;
+  white-space:nowrap !important; word-break:normal !important;
+  direction:ltr !important; -webkit-font-feature-settings:"liga";
+  font-feature-settings:"liga"; -webkit-font-smoothing:antialiased;
+}
 
 /* 상단 크롬 정리 — 배포한 앱에 'Deploy' 버튼이 보일 이유가 없다 */
 [data-testid="stAppDeployButton"] { display:none; }

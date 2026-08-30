@@ -361,8 +361,44 @@ def _contact(v):
 </div></section>""" % "".join(links)
 
 
+# ---------------------------------------------------------------- PDF 저장용
+# 서버에서 PDF 를 직접 만들려면 브라우저 엔진을 통째로 얹어야 하는데,
+# 그렇게 만든 PDF 는 이 디자인(그리드·그림자)을 제대로 못 그립니다.
+# 그래서 '열면 인쇄창이 바로 뜨는 파일'을 주고, 실제 렌더링은
+# 사용자 브라우저에 맡깁니다. 결과물이 화면과 100% 같습니다.
+_PRINT_KIT = """
+<style>
+.pdf-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 14px 18px; background: #14181d; color: #fff;
+  font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif; font-size: 14px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.2);
+}
+.pdf-bar button {
+  border: 0; border-radius: 8px; padding: 10px 20px; cursor: pointer;
+  background: #fff; color: #14181d; font-weight: 700; font-size: 14px;
+  font-family: inherit;
+}
+.pdf-bar span { opacity: .75; }
+body { padding-bottom: 64px; }
+@media print { .pdf-bar { display: none !important; } body { padding-bottom: 0; } }
+</style>
+<div class="pdf-bar">
+  <button onclick="window.print()">PDF로 저장</button>
+  <span>인쇄 창에서 대상을 &lsquo;PDF로 저장&rsquo; 으로 고르세요</span>
+</div>
+<script>
+window.addEventListener("load", function () {
+  // 글꼴과 이미지가 다 올라온 뒤에 열어야 인쇄 미리보기가 깨지지 않는다
+  var go = function () { setTimeout(function () { window.print(); }, 300); };
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(go); } else { go(); }
+});
+</script>"""
+
+
 # ---------------------------------------------------------------- 전체
-def render_html(v, standalone=True):
+def render_html(v, standalone=True, auto_print=False):
     plan = _sections_plan(v)
     body = [_hero(v), _index(v, plan)]
     num = 0
@@ -407,4 +443,6 @@ def render_html(v, standalone=True):
 </head><body>
 %s
 <footer><div class="wrap"><div>&copy; %s</div><div>Portfolio</div></div></footer>
-</body></html>""" % (e(title), font_link, _css(), e(accent), "\n".join(body), e(name))
+%s
+</body></html>""" % (e(title), font_link, _css(), e(accent), "\n".join(body), e(name),
+                     _PRINT_KIT if auto_print else "")
