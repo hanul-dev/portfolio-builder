@@ -42,14 +42,20 @@ def _jd_step():
         if st.button("링크에서 가져오기", use_container_width=True,
                      disabled=not (t.get("jd_url") or "").strip()):
             with st.spinner("공고를 읽는 중..."):
-                text, err = extract.jd_from_url(t.get("jd_url"))
+                text, err, info = extract.jd_from_url(t.get("jd_url"))
             if err:
                 st.session_state.jd_fetch_msg = ("warn", err)
             elif text:
                 t["jd_text"] = text
                 C.dirty()
-                st.session_state.jd_fetch_msg = ("ok", "공고를 가져왔습니다. 아래에서 확인하고, "
-                                                       "필요 없는 부분은 지워 주세요.")
+                note = "공고를 가져왔습니다 (%s · %d자)." % (info.get("how", ""),
+                                                     info.get("chars", 0))
+                if info.get("thin"):
+                    note += (" 다만 **본문이 짧아 메뉴만 긁어왔을 수 있습니다.** "
+                             "아래 내용을 확인하고, 이상하면 직접 붙여넣어 주세요.")
+                    st.session_state.jd_fetch_msg = ("warn", note)
+                else:
+                    st.session_state.jd_fetch_msg = ("ok", note + " 필요 없는 부분은 지워 주세요.")
                 C.bump()
             st.rerun()
 

@@ -253,3 +253,72 @@ def keyword_plan(doc, jd_text, my_text, limit=20, my_tags=None):
     items.sort(key=lambda x: (x["kind"] != "역량", -x["weight"], x["used"],
                               -x["count"], x["label"]))
     return items[:limit]
+
+
+# ---------------------------------------------------------------- 수정 포인트
+def fix_points(doc, target, my_tags, limit=10):
+    """'그래서 뭘 고치면 되는데?' 에 답하는 구체적인 할 일 목록.
+
+    요구사항 목록만 보여 주면 무엇부터 손대야 할지 알기 어렵습니다.
+    순서 · 문장 · 태그 · 키워드로 나눠, 어디를 어떻게 고칠지 적어 줍니다.
+    """
+    from .reco import rank_projects, gap_advice
+
+    jd_text = target.get("jd_text") or ""
+    req = requirements(doc, jd_text, my_tags)
+    jd_tags = [t for g in req["groups"] for t in g["tags"]]
+    out = []
+
+    # 1) 순서 — 공고와 가장 가까운 프로젝트가 맨 앞에 있는가
+    ranked = rank_projects(doc, jd_tags)
+    order = target.get("project_order") or [p["id"] for p in doc["base"]["projects"]]
+    if ranked and order:
+        best = ranked[0]
+        hits = len([t for t in (best.get("tags") or []) if t in jd_tags])
+        if order and order[0] != best["id"] and hits >= 2:
+            cur = next((p for p in doc["base"]["projects"] if p["id"] == order[0]), None)
+            out.append({
+                "kind": "순서",
+                "text": "'%s'를 첫 번째로 올리세요. 공고 요구사항과 %d개 겹칩니다%s."
+                        % (best.get("title") or "무제", hits,
+                           " (지금 1번은 '%s')" % (cur.get("title") or "무제") if cur else ""),
+            })
+
+    # 2) 문장 — 미충족 항목마다 어디를 고칠지
+    for g in req["groups"]:
+        for tag in g["miss"]:
+            out.append({
+                "kind": "문장",
+                "text": "[%s] %s" % (g["label"], gap_advice(doc, tag, jd_tags)),
+            })
+
+    # 3) 키워드 — 공고가 쓰는데 내 글엔 없는 말
+    from . import schema as _schema
+    plan = keyword_plan(doc, jd_text, _schema.my_text(doc, target), my_tags=my_tags)
+    unused_terms = [k for k in plan if not k["used"] and k["kind"] == "용어"]
+    if unused_terms:
+        out.append({
+            "kind": "키워드",
+            "text": "공고가 쓰는 말인데 내 글엔 없습니다: %s. 실제로 해본 일이라면 "
+                    "그 회사가 쓰는 단어로 바꿔 쓰세요."
+                    % ", ".join(k["label"] for k in unused_terms[:6]),
+        })
+
+    # 4) 구성 — 분량과 빈칸
+    b = doc["base"]
+    if len(b["projects"]) < 3:
+        out.append({"kind": "구성",
+                    "text": "프로젝트가 %d건입니다. 서류 전형에서는 3~5건이 가장 읽기 좋습니다."
+                            % len(b["projects"])})
+    if not b["person"].get("photo"):
+        out.append({"kind": "구성", "text": "증명사진이 없습니다. 표지와 프로필 슬라이드가 비어 보입니다."})
+    if not any((x.get("a") or "").strip() for x in (b["custom"].get("items") or [])):
+        out.append({"kind": "구성",
+                    "text": "자유 섹션이 비어 있습니다. 직무에 대한 본인 관점을 한 항목이라도 쓰면 "
+                            "면접 질문의 출발점이 됩니다."})
+    if not (target.get("intro") or "").strip():
+        out.append({"kind": "구성", "text": "자기소개가 비어 있습니다. 추천 수정안 탭에서 초안을 받을 수 있습니다."})
+
+    order_rank = {"순서": 0, "문장": 1, "키워드": 2, "구성": 3}
+    out.sort(key=lambda x: order_rank.get(x["kind"], 9))
+    return out[:limit]

@@ -50,6 +50,12 @@ CSS = """
   .kw-table td { border-bottom:1px solid #eef1f4; padding:7px 8px; }
   .kw-table .k-w { font-weight:600; color:#14181d; }
   .kw-table .k-kind { color:#8b959e; font-size:12.5px; width:60px; }
+  .fix { border:1px solid #e8ecf0; border-left:3px solid #2c5f8a; background:#fafbfc;
+         padding:10px 14px; margin:7px 0; border-radius:0 6px 6px 0; font-size:14px;
+         line-height:1.65; }
+  .fix-k { display:inline-block; font-size:11px; font-weight:700; color:#fff;
+           background:#2c5f8a; border-radius:3px; padding:2px 7px; margin-right:8px;
+           vertical-align:1px; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)

@@ -104,42 +104,179 @@ _DROP_TAGS = ["script", "style", "noscript", "nav", "header", "footer",
               "form", "svg", "iframe", "aside"]
 
 
-def jd_from_url(url, timeout=12):
+_HEADERS = {
+    "User-Agent": _UA,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Cache-Control": "no-cache",
+}
+
+# 공고 본문이면 거의 반드시 들어 있는 말들
+JD_HINTS = ("자격요건", "담당업무", "우대사항", "주요업무", "지원자격", "모집부문",
+            "업무내용", "필수요건", "지원자", "채용", "경력", "신입",
+            "responsibilities", "qualifications", "requirements", "preferred")
+
+
+def _score_jd(text):
+    """이 글이 채용 공고 본문일 가능성 점수."""
+    if not text:
+        return 0
+    low = text.lower()
+    hits = sum(1 for h in JD_HINTS if h.lower() in low)
+    return hits * 500 + min(len(text), 6000)
+
+
+def _from_jsonld(html):
+    """구글 채용검색용 JobPosting 구조화 데이터. 있으면 가장 깨끗하다."""
+    import json
+    best = ""
+    for m in re.finditer(r"<script[^>]+application/ld\+json[^>]*>(.*?)</script>",
+                         html or "", re.S | re.I):
+        try:
+            data = json.loads(m.group(1).strip())
+        except Exception:
+            continue
+        stack = [data]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, list):
+                stack.extend(node)
+            elif isinstance(node, dict):
+                types = node.get("@type") or ""
+                types = types if isinstance(types, str) else " ".join(map(str, types))
+                if "JobPosting" in types:
+                    parts = [node.get("title") or "",
+                             html_to_text(node.get("description") or "")]
+                    cand = "\n".join(p for p in parts if p)
+                    if _score_jd(cand) > _score_jd(best):
+                        best = cand
+                stack.extend(v for v in node.values()
+                             if isinstance(v, (dict, list)))
+    return best
+
+
+def _walk_strings(node, out, depth=0):
+    if depth > 12:
+        return
+    if isinstance(node, str):
+        if len(node) >= 120:
+            out.append(node)
+    elif isinstance(node, list):
+        for v in node:
+            _walk_strings(v, out, depth + 1)
+    elif isinstance(node, dict):
+        for v in node.values():
+            _walk_strings(v, out, depth + 1)
+
+
+def _from_embedded_json(html):
+    """__NEXT_DATA__ 같은 스크립트에 박힌 JSON 에서 공고 본문을 찾는다.
+
+    요즘 채용 사이트는 화면을 자바스크립트로 그리지만,
+    그 재료가 되는 데이터는 HTML 안에 JSON 으로 같이 실려 옵니다.
+    """
+    import json
+    best = ""
+    blocks = re.findall(r"<script[^>]*>(.*?)</script>", html or "", re.S | re.I)
+    for block in blocks:
+        block = block.strip()
+        if len(block) < 200 or ("{" not in block):
+            continue
+        # 통째로 JSON 이거나, `... = {...};` 형태
+        candidates = [block]
+        m = re.search(r"=\s*(\{.*\})\s*;?\s*$", block, re.S)
+        if m:
+            candidates.append(m.group(1))
+        for raw in candidates:
+            try:
+                data = json.loads(raw)
+            except Exception:
+                continue
+            strings = []
+            _walk_strings(data, strings)
+            for s in strings:
+                cand = html_to_text(s) if "<" in s else s
+                if _score_jd(cand) > _score_jd(best):
+                    best = cand
+            break
+    return best
+
+
+def _from_meta(html):
+    for pat in (r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']',
+                r'<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']'):
+        m = re.search(pat, html or "", re.S | re.I)
+        if m:
+            return html_to_text(m.group(1))
+    return ""
+
+
+def jd_from_url(url, timeout=15):
     """공고 링크에서 본문을 가져온다. -> (텍스트, 오류메시지)
 
-    채용 사이트는 자바스크립트로 그리거나 봇을 막는 경우가 많아
-    실패가 정상입니다. 실패하면 붙여넣기로 넘어가면 됩니다.
+    네 가지 방법을 차례로 시도하고 가장 공고다운 결과를 고릅니다.
+      1) JobPosting 구조화 데이터 (가장 깨끗함)
+      2) 페이지에 박힌 JSON (__NEXT_DATA__ 등)
+      3) HTML 본문
+      4) og:description
+    그래도 안 되면 붙여넣기로 안내합니다.
     """
     url = (url or "").strip()
     if not url:
-        return "", None
+        return "", None, {}
     if not re.match(r"^https?://", url, re.I):
         url = "https://" + url
 
     try:
         import requests
     except ImportError:
-        return "", "requests 가 설치되지 않았습니다."
+        return "", "requests 가 설치되지 않았습니다.", {}
 
     try:
-        res = requests.get(url, timeout=timeout, headers={
-            "User-Agent": _UA,
-            "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
-        })
+        res = requests.get(url, timeout=timeout, headers=_HEADERS, allow_redirects=True)
     except Exception as exc:
-        return "", "페이지를 열지 못했습니다: %s" % type(exc).__name__
+        return "", "페이지를 열지 못했습니다: %s" % type(exc).__name__, {}
 
     if res.status_code >= 400:
-        return "", ("사이트가 접근을 막았습니다 (HTTP %d). "
-                    "공고 내용을 직접 붙여넣어 주세요." % res.status_code)
+        if res.status_code == 404:
+            msg = ("공고를 찾을 수 없습니다 (404). 마감돼 내려간 공고이거나 "
+                   "주소가 바뀐 것 같습니다. 내용을 직접 붙여넣어 주세요.")
+        else:
+            msg = ("사이트가 접근을 막았습니다 (HTTP %d). 로그인이 필요하거나 "
+                   "자동 접근을 차단하는 사이트입니다. 내용을 직접 붙여넣어 주세요."
+                   % res.status_code)
+        return "", msg, {}
 
     res.encoding = res.apparent_encoding or res.encoding
-    text = html_to_text(res.text)
+    html = res.text
 
-    if len(text) < 200:
-        return "", ("본문을 찾지 못했습니다. 이 사이트는 화면을 자바스크립트로 그리는 것 같습니다. "
-                    "공고 페이지에서 내용을 복사해 붙여넣어 주세요.")
-    return text, None
+    best, how = "", ""
+    for name, fn in (("구조화 데이터", _from_jsonld),
+                     ("페이지 내 데이터", _from_embedded_json),
+                     ("본문", html_to_text),
+                     ("페이지 요약", _from_meta)):
+        try:
+            cand = fn(html)
+        except Exception:
+            continue
+        if _score_jd(cand) > _score_jd(best):
+            best, how = cand, name
+
+    best = clean_text(best)
+    hints = sum(1 for h in JD_HINTS if h.lower() in best.lower())
+
+    if len(best) < 300 or hints < 2:
+        return "", ("공고 본문을 찾지 못했습니다. 화면을 자바스크립트로 그리거나 "
+                    "로그인이 필요한 사이트로 보입니다. "
+                    "공고 페이지에서 내용을 복사해 붙여넣어 주세요."), {}
+
+    # 메뉴·푸터만 긁어온 '가짜 성공'을 그냥 통과시키면 사용자가 속는다
+    thin = len(best) < 900 or hints < 3
+    return best, None, {"how": how, "chars": len(best), "hints": hints, "thin": thin}
 
 
 def html_to_text(html):
