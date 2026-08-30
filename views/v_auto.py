@@ -17,7 +17,7 @@ MAX_MB = 15
 
 
 def _step(n, title, done=False):
-    st.markdown("#### %s %d단계 · %s" % ("✅" if done else "▸", n, title))
+    C.step(n, title, done=done)
 
 
 # ---------------------------------------------------------------- 1단계
@@ -268,7 +268,8 @@ def render():
     if C.locked():
         return
     C.page_head("자동 만들기",
-                "공고와 이력서 파일만 있으면 됩니다. 나머지는 앱이 맞춰서 정리합니다.")
+                "공고와 이력서 파일만 있으면 됩니다. 나머지는 앱이 맞춰서 정리합니다.",
+                eyebrow="Start here")
     _after_build()
     st.divider()
     _jd_step()

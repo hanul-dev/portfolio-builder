@@ -35,7 +35,9 @@ def render():
         return
     d = C.doc()
     t = C.target()
-    C.page_head("추천 수정안", "공고와 내 이력을 대조해 만든 초안입니다. 마음에 드는 것만 골라 적용하세요.")
+    C.page_head("추천 수정안",
+                "공고와 내 이력을 대조해 만든 초안입니다. 마음에 드는 것만 골라 적용하세요.",
+                eyebrow="Suggestions")
 
     has_jd = bool((t.get("jd_text") or "").strip())
     if not has_jd:

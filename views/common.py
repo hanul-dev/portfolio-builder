@@ -157,10 +157,37 @@ def simple_list_editor(items, fields, key_prefix, new_item, label_of, add_label=
 
 
 # ---------------------------------------------------------------- 레이아웃
-def page_head(title, desc=""):
-    st.markdown("### " + title)
-    if desc:
-        st.caption(desc)
+def page_head(title, desc="", eyebrow=""):
+    """페이지 머리. 작은 라벨 + 제목 + 설명."""
+    st.markdown(
+        "<div class='page-head'>%s<h1 class='page-title'>%s</h1>%s</div>"
+        % (("<span class='page-eyebrow'>%s</span>" % _esc(eyebrow)) if eyebrow else "",
+           _esc(title),
+           ("<p class='page-sub'>%s</p>" % _esc(desc)) if desc else ""),
+        unsafe_allow_html=True)
+
+
+def step(n, title, done=False):
+    """1단계 · 2단계 … 표시."""
+    st.markdown(
+        "<div class='step%s'><span class='step-n'>%s</span>"
+        "<span class='step-t'>%s</span></div>"
+        % (" done" if done else "", "✓" if done else n, _esc(title)),
+        unsafe_allow_html=True)
+
+
+def stat_cards(items, highlight=0):
+    """[(값, 라벨), …] 를 카드 줄로."""
+    cells = "".join(
+        "<div class='stat%s'><b>%s</b><span>%s</span></div>"
+        % (" hi" if i < highlight else "", _esc(v), _esc(l))
+        for i, (v, l) in enumerate(items))
+    st.markdown("<div class='stat-row'>%s</div>" % cells, unsafe_allow_html=True)
+
+
+def _esc(text):
+    import html as _h
+    return _h.escape(str(text or ""))
 
 
 def empty_hint(msg):

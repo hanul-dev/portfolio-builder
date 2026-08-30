@@ -13,7 +13,8 @@ def render():
         return
     d = C.doc()
     b = d["base"]
-    C.page_head("내 정보", "여기 입력한 내용이 모든 지원처에서 공유되는 원본입니다.")
+    C.page_head("내 정보", "여기 입력한 내용이 모든 지원처에서 공유되는 원본입니다.",
+                eyebrow="Profile")
 
     tabs = st.tabs(["기본 정보", "학력 · 어학", "역량 · 자격", "수상 · 활동", "자유 섹션"])
 

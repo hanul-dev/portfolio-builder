@@ -66,19 +66,15 @@ def _fetch_message():
 
 
 def _score_row(req, res):
-    left, right = st.columns([1, 2])
-    with left:
-        st.metric("공고 충족률", "%d%%" % req["score"],
-                  help="필수 요구사항에 더 큰 가중치를 둔 값입니다.")
-        st.progress(req["score"] / 100.0)
-    with right:
-        cols = st.columns(len(req["groups"]) or 1)
-        for col, g in zip(cols, req["groups"]):
-            col.metric("%s %s" % (GROUP_ICON.get(g["label"], ""), g["label"]),
-                       "%d / %d" % (len(g["hit"]), len(g["tags"])))
-        if not req["has_structure"]:
-            st.caption("공고에서 '자격요건 · 우대사항' 같은 제목을 찾지 못해 전체를 필수로 봤습니다. "
-                       "제목까지 붙여넣으면 더 정확해집니다.")
+    items = [("%d%%" % req["score"], "공고 충족률")]
+    for g in req["groups"]:
+        items.append(("%d / %d" % (len(g["hit"]), len(g["tags"])),
+                      "%s %s" % (GROUP_ICON.get(g["label"], ""), g["label"])))
+    C.stat_cards(items, highlight=1)
+    st.progress(req["score"] / 100.0)
+    if not req["has_structure"]:
+        st.caption("공고에서 '자격요건 · 우대사항' 같은 제목을 찾지 못해 전체를 필수로 봤습니다. "
+                   "제목까지 붙여넣으면 더 정확해집니다.")
 
 
 def _requirement_cards(doc, req):
@@ -138,7 +134,8 @@ def render():
     d = C.doc()
     t = C.target()
     C.page_head("공고 분석", "공고를 필수 · 담당업무 · 우대로 나눠 읽고, "
-                            "내 이력으로 무엇이 증명되는지 대조합니다.")
+                            "내 이력으로 무엇이 증명되는지 대조합니다.",
+                eyebrow="Job analysis")
     _target_form(t)
 
     if not (t.get("jd_text") or "").strip():

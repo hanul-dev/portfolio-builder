@@ -80,7 +80,13 @@ def gate():
 
     value, _hashed = configured()
 
-    st.markdown("### 🔒 포트폴리오 빌더")
+    st.markdown(
+        "<div class='gate-wrap'><div class='gate-mark'>P</div>"
+        "<h1 class='gate-title'>포트폴리오 빌더</h1>"
+        "<p class='gate-sub'>이력서와 채용 공고를 넣으면<br>"
+        "공고에 맞춘 포트폴리오를 만들어 드립니다.</p></div>",
+        unsafe_allow_html=True)
+
     if not value:
         # 설정이 안 된 채 배포된 상태 — 열어 주지 않는다
         st.error("비밀번호가 설정되지 않아 접속할 수 없습니다. "
@@ -108,24 +114,29 @@ app_password_sha256 = "해시값"
         st.error("비밀번호를 여러 번 틀렸습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.")
         return False
 
-    st.caption("초대받은 분만 사용할 수 있습니다. 비밀번호를 입력해 주세요.")
-    with st.form("auth_form"):
-        entered = st.text_input("비밀번호", type="password",
-                                label_visibility="collapsed",
-                                placeholder="비밀번호")
-        sent = st.form_submit_button("들어가기", type="primary")
+    mid = st.columns([1, 2, 1])[1]
+    with mid:
+        with st.form("auth_form"):
+            entered = st.text_input("비밀번호", type="password",
+                                    label_visibility="collapsed",
+                                    placeholder="초대받은 비밀번호를 입력하세요")
+            sent = st.form_submit_button("들어가기", type="primary",
+                                         use_container_width=True)
 
-    if sent:
-        if verify(entered):
-            st.session_state[SESSION_KEY] = True
-            st.session_state.pop("auth_tries", None)
-            st.rerun()
-        else:
-            st.session_state.auth_tries = tries + 1
-            st.error("비밀번호가 맞지 않습니다. (%d/%d)"
-                     % (st.session_state.auth_tries, MAX_TRIES))
+        if sent:
+            if verify(entered):
+                st.session_state[SESSION_KEY] = True
+                st.session_state.pop("auth_tries", None)
+                st.rerun()
+            else:
+                st.session_state.auth_tries = tries + 1
+                st.error("비밀번호가 맞지 않습니다. (%d/%d)"
+                         % (st.session_state.auth_tries, MAX_TRIES))
 
-    st.caption("입력한 비밀번호는 어디에도 저장되거나 기록되지 않습니다.")
+        st.markdown(
+            "<p class='gate-note'>입력한 비밀번호와 작업 내용은 서버에 저장되지 않습니다.<br>"
+            "모든 데이터는 사용하는 브라우저 안에만 남습니다.</p>",
+            unsafe_allow_html=True)
     return False
 
 

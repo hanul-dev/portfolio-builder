@@ -21,43 +21,8 @@ from views import (v_auto, v_start, v_basics, v_career,  # noqa: E402
 st.set_page_config(page_title="포트폴리오 빌더", page_icon="📄",
                    layout="wide", initial_sidebar_state="expanded")
 
-CSS = """
-<style>
-  section.main > div { padding-top: 1.2rem; }
-  div[data-testid="stExpander"] details { border-radius: 6px; }
-  .stButton button { border-radius: 6px; }
-  .pill {
-    display:inline-block; padding:3px 10px; margin:2px 4px 2px 0; border-radius:999px;
-    font-size:12.5px; border:1px solid #d9dfe5; background:#f4f6f8; color:#2b333c;
-  }
-  .pill.hit { background:#e6f0f8; border-color:#a8cde5; color:#2c5f8a; font-weight:600; }
-  .pill.miss { background:#fdeeee; border-color:#f2c4c4; color:#a33; font-weight:600; }
-  .advice { border-left:3px solid #2c5f8a; background:#f4f6f8; padding:10px 14px;
-            margin:8px 0; font-size:14px; line-height:1.65; border-radius:0 6px 6px 0; }
-  .reco { border:1px solid #d9dfe5; border-radius:8px; padding:14px 16px; margin-bottom:12px; }
-  .reco .lb { font-size:11.5px; font-weight:700; letter-spacing:.06em; color:#2c5f8a; }
-  .reco .tx { font-size:16px; font-weight:600; margin:6px 0 8px; white-space:pre-line; }
-  .reco .wy { font-size:13px; color:#5a656f; line-height:1.6; }
-  .req { border-left:3px solid #d9dfe5; background:#fafbfc; padding:9px 14px;
-         margin:6px 0; border-radius:0 6px 6px 0; }
-  .req.ok { border-left-color:#2c8a5f; background:#f2f9f5; }
-  .req.no { border-left-color:#c25a4a; background:#fdf5f4; }
-  .req b { font-size:14.5px; }
-  .req-why { display:block; font-size:13px; color:#5a656f; line-height:1.6; margin-top:3px; }
-  .kw-table { width:100%; border-collapse:collapse; font-size:14px; margin:6px 0 16px; }
-  .kw-table th { text-align:left; font-size:12px; color:#8b959e; font-weight:600;
-                 border-bottom:1px solid #d9dfe5; padding:6px 8px; }
-  .kw-table td { border-bottom:1px solid #eef1f4; padding:7px 8px; }
-  .kw-table .k-w { font-weight:600; color:#14181d; }
-  .kw-table .k-kind { color:#8b959e; font-size:12.5px; width:60px; }
-  .fix { border:1px solid #e8ecf0; border-left:3px solid #2c5f8a; background:#fafbfc;
-         padding:10px 14px; margin:7px 0; border-radius:0 6px 6px 0; font-size:14px;
-         line-height:1.65; }
-  .fix-k { display:inline-block; font-size:11px; font-weight:700; color:#fff;
-           background:#2c5f8a; border-radius:3px; padding:2px 7px; margin-right:8px;
-           vertical-align:1px; }
-</style>
-"""
+from views.style import CSS   # noqa: E402
+
 st.markdown(CSS, unsafe_allow_html=True)
 
 
@@ -119,9 +84,16 @@ def sidebar():
     d = st.session_state.doc
     with st.sidebar:
         name = d["base"]["person"].get("name") or "이름 없음"
-        st.markdown("#### 📄 포트폴리오 빌더")
-        st.caption("%s · 프로젝트 %d건" % (name, len(d["base"]["projects"])))
-        st.divider()
+        st.markdown(
+            "<div class='brand'><div class='brand-mark'>P</div>"
+            "<div><div class='brand-name'>포트폴리오 빌더</div>"
+            "<div class='brand-sub'>공고에 맞춰 다시 쓰는 포트폴리오</div></div></div>",
+            unsafe_allow_html=True)
+        st.markdown(
+            "<div class='who'><b>%s</b><span>프로젝트 %d건 · 지원처 %d곳</span></div>"
+            % (name, len(d["base"]["projects"]), len(d["targets"])),
+            unsafe_allow_html=True)
+        st.write("")
 
         ids = list(d["targets"])
         labels = [d["targets"][i].get("label") or i for i in ids]

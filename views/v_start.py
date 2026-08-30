@@ -20,7 +20,9 @@ def render():
     if C.locked():
         return
     d = C.doc()
-    C.page_head("시작하기", "내 이력을 한 번 입력해 두면, 지원하는 회사마다 순서와 문장만 바꿔 쓸 수 있습니다.")
+    C.page_head("불러오기 · 저장",
+                "작업한 내용을 보관하거나, 전에 만든 파일을 다시 불러옵니다.",
+                eyebrow="Data")
 
     if st.session_state.get("loaded_from") == "local":
         st.warning(
@@ -79,16 +81,13 @@ def render():
     else:
         b = d["base"]
         st.markdown("#### 현재 상태")
-        cols = st.columns(5)
-        stats = [
-            ("경력", len(b["experience"])),
-            ("프로젝트", len(b["projects"])),
-            ("보유 역량", len(b["skills"])),
-            ("자격 · 수상", len(b["certificates"]) + len(b["awards"])),
-            ("지원처", len(d["targets"])),
-        ]
-        for col, (label, n) in zip(cols, stats):
-            col.metric(label, "%d건" % n)
+        C.stat_cards([
+            ("%d" % len(b["experience"]), "경력"),
+            ("%d" % len(b["projects"]), "프로젝트"),
+            ("%d" % len(b["skills"]), "보유 역량"),
+            ("%d" % (len(b["certificates"]) + len(b["awards"])), "자격 · 수상"),
+            ("%d" % len(d["targets"]), "지원처"),
+        ])
 
         t = C.target()
         done = []

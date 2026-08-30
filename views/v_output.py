@@ -17,7 +17,8 @@ def render():
     d = C.doc()
     t = C.target()
     C.page_head("미리보기 · 다운로드",
-                "지금 설정 그대로 웹페이지와 발표자료를 만듭니다. 원본 이력은 바뀌지 않습니다.")
+                "지금 설정 그대로 웹페이지와 발표자료를 만듭니다. 원본 이력은 바뀌지 않습니다.",
+                eyebrow="Export")
 
     b = d["base"]
     if not b["person"].get("name") and not b["projects"]:
