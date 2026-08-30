@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tailor · 공고에 맞춰 다시 쓰는 포트폴리오 · Streamlit 앱.
+"""취준 포폴 뽀개기 · 공고에 맞춰 다시 쓰는 포트폴리오 · Streamlit 앱.
 
     streamlit run app/app.py
 """

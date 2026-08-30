@@ -12,8 +12,8 @@ INK = "#14181d"
 BLUE = "#2c5f8a"
 
 # 이름은 여기 한 곳에서만 고치면 화면 전체에 반영됩니다.
-BRAND = "Tailor"
-BRAND_MARK = "T"
+BRAND = "취준 포폴 뽀개기_V1"
+BRAND_MARK = "취"
 BRAND_SUB = "공고에 맞춰 다시 쓰는 포트폴리오"
 
 CSS = """
