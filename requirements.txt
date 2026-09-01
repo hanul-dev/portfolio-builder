@@ -1,8 +1,11 @@
-streamlit>=1.39
-python-pptx>=0.6.23
-Pillow>=10.0
-pdfplumber>=0.11
-python-docx>=1.1
-beautifulsoup4>=4.12
-requests>=2.31
+# 최소 버전만 적어 둡니다. Streamlit Cloud 는 매번 최신을 설치합니다.
+# 아래 '확인' 은 실제로 돌려 보고 이상 없던 버전입니다. (2026-09-02)
+
+streamlit>=1.39            # 확인 1.63.0 · icon= 인자가 1.39 부터
+python-pptx>=0.6.23        # 확인 1.0.2
+Pillow>=10.0               # 확인 12.3.0
+pdfplumber>=0.11           # 확인 0.11.10
+python-docx>=1.1           # 확인 1.2.0
+beautifulsoup4>=4.12       # 확인 4.15.0
+requests>=2.31             # 확인 2.34.2
 streamlit-local-storage>=0.0.25

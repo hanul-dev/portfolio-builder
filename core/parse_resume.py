@@ -109,11 +109,17 @@ def _norm(line):
     return re.sub(r"\s+", "", (line or "").strip(DECOR + " ")).lower()
 
 
+# '1. 경력사항', '3) 학력', 'Ⅱ. 자격' 처럼 번호를 매긴 제목.
+# 한글 이력서 양식에서 아주 흔한데, 번호가 붙으면 제목으로 못 알아본다.
+NUMBERED_HEAD = re.compile(r"^[(（]?(?:\d{1,2}|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]{1,4}|[IVX]{1,4})"
+                           r"[.)．）]\s*|^[①-⑳➀-➉]\s*")
+
+
 def _section_of(line):
     """섹션 제목이면 종류를 돌려준다. 여러 종류가 섞인 제목이면 'mixed'."""
     if len(line.strip()) > 26:
         return None
-    key = _norm(line)
+    key = _norm(NUMBERED_HEAD.sub("", line.strip(DECOR + " ")))
     key = re.sub(r"[(（].*$", "", key)
     key = re.sub(r"(총)?\d+\s*(년|개월|건|개|년차).*$", "", key)
     if not key:
@@ -658,7 +664,6 @@ def _parse_person(text, head_lines):
             y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
             if 1950 <= y <= 2015 and 1 <= mo <= 12 and 1 <= d <= 31:
                 start, end = m.start(), m.end()
-                around = text[max(0, start - 3):min(len(text), end + 3)]
                 if re.search(r"[~\-–—]\s*$", text[max(0, start - 3):start]):
                     continue                     # 기간의 뒷부분이면 건너뛴다
                 if re.match(r"^\s*[~\-–—]", text[end:end + 3]):
@@ -745,13 +750,15 @@ def parse(text):
     total = sum(found.values())
     person = base["person"]
 
-    # 얼마나 믿을 만한 결과인지 — 화면에서 경고를 띄우는 기준
-    if (base["experience"] or base["projects"]) and total >= 6:
-        confidence = "high"
-    elif total >= 4 or person.get("name"):
-        confidence = "medium"
-    else:
+    # 얼마나 믿을 만한 결과인지 — 화면에서 경고를 띄우는 기준.
+    # 이름만 찾고 내용을 하나도 못 읽었으면 낮음이다. 그걸 '일부는 읽었다'고
+    # 하면 사용자가 결과를 확인하지 않고 넘어가 버린다.
+    if total == 0:
         confidence = "low"
+    elif (base["experience"] or base["projects"]) and total >= 6:
+        confidence = "high"
+    else:
+        confidence = "medium"
 
     report = {
         "found": found,

@@ -124,22 +124,26 @@ def normalize(doc):
         else:
             out["base"][key] = val if isinstance(val, list) else default
 
-    # 프로젝트 · 경력에 빠진 키 채우기
-    fixed = []
+    # 프로젝트 · 경력에 빠진 키 채우기.
+    # id 가 겹치면 결과물에서 한 건만 남고 나머지가 소리 없이 사라지므로,
+    # 비어 있거나 이미 쓴 id 는 여기서 새로 발급한다.
+    fixed, seen = [], set()
     for pr in out["base"]["projects"]:
         item = empty_project()
         item.update(pr if isinstance(pr, dict) else {})
-        if not item.get("id"):
+        if not item.get("id") or item["id"] in seen:
             item["id"] = new_id("p")
+        seen.add(item["id"])
         fixed.append(item)
     out["base"]["projects"] = fixed
 
-    fixed = []
+    fixed, seen = [], set()
     for ex in out["base"]["experience"]:
         item = empty_experience()
         item.update(ex if isinstance(ex, dict) else {})
-        if not item.get("id"):
+        if not item.get("id") or item["id"] in seen:
             item["id"] = new_id("e")
+        seen.add(item["id"])
         fixed.append(item)
     out["base"]["experience"] = fixed
 
