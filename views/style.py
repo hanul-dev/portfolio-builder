@@ -36,15 +36,19 @@ html, body, [class*="st-"], button, input, textarea, select {
 body { word-break: keep-all; }
 
 /* Streamlit 의 아이콘은 '글꼴이 곧 그림' 입니다. 위에서 글꼴을 강제로 바꾸면
-   그림 대신 bolt · lightbulb 같은 이름이 글자로 튀어나오므로 반드시 되돌립니다. */
-[data-testid="stIconMaterial"], span[data-testid="stIconMaterial"] {
-  font-family:"Material Symbols Rounded" !important;
+   그림 대신 bolt · lightbulb 같은 이름이 글자로 튀어나오므로 반드시 되돌립니다.
+   아이콘 요소 이름이 stIconMaterial 하나가 아니라(stAlertDynamicIcon 등)
+   testid 에 Icon 이 들어간 것을 전부 겨냥합니다. 새 이름이 생겨도 안 깨집니다. */
+[data-testid*="Icon"], [class*="material-symbols"], [class*="material-icons"] {
+  font-family:"Material Symbols Rounded","Material Symbols Outlined" !important;
   font-weight:400 !important; font-style:normal !important;
   letter-spacing:normal !important; text-transform:none !important;
   white-space:nowrap !important; word-break:normal !important;
   direction:ltr !important; -webkit-font-feature-settings:"liga";
   font-feature-settings:"liga"; -webkit-font-smoothing:antialiased;
 }
+/* 파일 이름·설명이 단어 중간에서 잘리지 않게 */
+[data-testid="stCaptionContainer"] p, .stCaption p { word-break:keep-all; }
 
 /* 상단 크롬 정리 — 배포한 앱에 'Deploy' 버튼이 보일 이유가 없다 */
 [data-testid="stAppDeployButton"] { display:none; }

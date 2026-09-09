@@ -78,6 +78,7 @@ KIND_MAP = {
 # 프로젝트 라벨 문법
 LABEL_MAP = {
     "프로젝트명": "title", "프로젝트": "title", "과제명": "title", "제목": "title",
+    "기간": "period", "수행기간": "period", "프로젝트기간": "period", "진행기간": "period",
     "프로젝트배경": "background", "배경": "background", "개요": "background",
     "프로젝트개요": "background", "상황": "background",
     "담당역할및실행": "actions", "담당역할": "actions", "담당업무": "actions",
@@ -171,6 +172,24 @@ def _label_of(line):
     if not m:
         return None
     return LABEL_MAP.get(re.sub(r"\s+", "", m.group(1)))
+
+
+# '[프로젝트명] 브랜드 캠페인' 처럼 라벨과 값이 한 줄에 붙어 있는 형태.
+# 라벨만 있는 줄로 쓰는 이력서도 있고 이렇게 쓰는 이력서도 있어서, 여기서
+# 두 줄로 펴 놓고 뒤쪽 규칙은 하나만 알게 합니다.
+INLINE_LABEL = re.compile(r"^[ \t]*[\[【]\s*([^\]】\n]{1,24}?)\s*[\]】][ \t]*(\S.*)$")
+
+
+def split_inline_labels(text):
+    out = []
+    for line in (text or "").split("\n"):
+        m = INLINE_LABEL.match(line)
+        if m and re.sub(r"\s+", "", m.group(1)) in LABEL_MAP:
+            out.append("[%s]" % m.group(1).strip())
+            out.append(m.group(2).strip())
+        else:
+            out.append(line)
+    return "\n".join(out)
 
 
 def split_sections(text):
@@ -275,9 +294,25 @@ def _parse_career(lines):
         label = _label_of(line)
         if label:
             field = label
-            if field == "title" and cur_proj is None:
-                cur_proj = {"title": "", "period": "", "role": "", "background": "",
-                            "actions": [], "core_skills": [], "result": ""}
+            if field == "title":
+                # [프로젝트명] 이 또 나오면 그 앞은 끝난 프로젝트다.
+                # 안 끊으면 여러 건이 한 건으로 뭉쳐 버린다.
+                if cur_proj is not None and cur_proj["title"]:
+                    _flush_project(cur_proj, company, projects)
+                    cur_proj = None
+                if cur_proj is None:
+                    cur_proj = {"title": "", "period": "", "role": "", "background": "",
+                                "actions": [], "core_skills": [], "result": ""}
+            continue
+
+        # '[기간]' 바로 다음 줄은 그 프로젝트의 날짜다. 이걸 아래에서
+        # '새 프로젝트가 시작되는 줄' 로 보면, 방금 읽은 제목이 통째로 날아간다.
+        if field == "period" and cur_proj is not None and RANGE.search(line):
+            got, rest = _period_of(line)
+            cur_proj["period"] = got or line.strip(DECOR + " ")
+            if rest and not cur_proj["title"]:
+                cur_proj["title"] = rest
+            field = None
             continue
 
         m = RANGE_AT_START.match(line)
@@ -318,8 +353,11 @@ def _parse_career(lines):
             is_bullet = bool(BULLET.match(line))
             # 목록형 라벨은 불릿까지만. 불릿 없는 줄이 나오면 목록이 끝난 것으로 본다
             # (그 줄은 대개 다음 프로젝트의 성과 한 줄이다).
-            if field in ("actions", "core_skills") and not is_bullet \
-                    and (cur_proj["actions"] or cur_proj["core_skills"]):
+            # '지금 채우는 칸' 이 이미 찼는지만 본다. 둘을 같이 보면 [핵심 역량] 이
+            # [담당 역할] 뒤에 올 때 첫 줄부터 버려진다.
+            own = cur_proj["actions"] if field == "actions" else \
+                cur_proj["core_skills"] if field == "core_skills" else None
+            if own is not None and not is_bullet and own:
                 field = None
             elif not body:
                 continue
@@ -333,7 +371,11 @@ def _parse_career(lines):
                     cur_proj["actions"][-1] += " " + body
                 continue
             elif field == "core_skills":
-                cur_proj["core_skills"].append(body)
+                # 역량은 '기획, 분석 · 운영' 처럼 한 줄에 몰아 적는 경우가 많다
+                for part in re.split(r"[,،/·ㆍ|]", body):
+                    part = part.strip(DECOR + " ")
+                    if part:
+                        cur_proj["core_skills"].append(part)
                 continue
             else:
                 cur_proj[field] = (cur_proj[field] + " " + body).strip()
@@ -694,7 +736,7 @@ def _parse_person(text, head_lines):
 # ---------------------------------------------------------------- 진입점
 def parse(text):
     """이력서 글자 -> (doc, report)"""
-    text = clean_text(text)
+    text = split_inline_labels(clean_text(text))
     doc = schema.empty_doc()
     base = doc["base"]
 

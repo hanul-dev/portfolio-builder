@@ -12,6 +12,7 @@ import streamlit as st
 from core import schema, extract, parse_resume, reco
 from core.tags import tag_label
 from views import common as C
+from views import exports
 
 MAX_MB = 15
 
@@ -125,7 +126,9 @@ def _review_step():
     if not report:
         return False
 
-    _step(3, "이렇게 읽었습니다", done=True)
+    # 이건 사용자가 하는 '단계' 가 아니라 2단계의 결과라, 번호를 붙이지 않는다.
+    # 번호를 붙이면 이력서를 안 올렸을 때 1 · 2 · 4 로 건너뛰어 보인다.
+    st.markdown("##### 이렇게 읽었습니다")
     st.caption("규칙으로 나눠 읽은 결과라 틀릴 수 있습니다. "
                "여기서 대충 맞으면 만들고, 세부 수정은 그다음에 하세요.")
 
@@ -172,7 +175,7 @@ def _review_step():
 
 # ---------------------------------------------------------------- 4단계
 def _build_step():
-    _step(4, "포트폴리오 만들기")
+    _step(3, "포트폴리오 만들기")
 
     auto_doc = st.session_state.get("auto_doc")
     t = C.target()
@@ -238,30 +241,34 @@ def _after_build():
         return
     d = C.doc()
     t = C.target()
-    st.success("포트폴리오를 만들었습니다.", icon=":material/check_circle:")
+    st.success("포트폴리오를 만들었습니다. 아래에서 바로 파일을 받으세요.",
+               icon=":material/check_circle:")
 
     res = reco.analyze(d, t)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("공고 충족률", "%d%%" % res["score"])
-    c2.metric("프로젝트", "%d건" % len(d["base"]["projects"]))
-    c3.metric("경력", "%d건" % len(d["base"]["experience"]))
+    C.stat_cards([
+        ("%d%%" % res["score"], "공고 충족률"),
+        ("%d건" % len(d["base"]["projects"]), "프로젝트"),
+        ("%d건" % len(d["base"]["experience"]), "경력"),
+    ], highlight=1)
 
     if res["miss"]:
         st.caption("보완이 필요한 요구사항: " + ", ".join(tag_label(x) for x in res["miss"][:6]))
+    st.caption("파일 받는 곳은 이 화면 맨 아래에 있습니다.")
 
-    st.markdown("**다음으로 할 일**")
-    st.markdown("""
-1. **미리보기 · 다운로드** 에서 결과를 보고 PDF · 발표자료를 받으세요.
-2. 문장이 어색하면 **내 정보** · **경력 · 프로젝트** 에서 고치세요. 자동으로 읽은 결과라 다듬을 곳이 있습니다.
-3. **추천 수정안** 에서 다른 헤드라인·자기소개 후보를 볼 수 있습니다.
+    with st.expander("더 다듬고 싶다면"):
+        st.markdown("""
+- 문장이 어색하면 **내 정보** · **경력 · 프로젝트** 에서 고치세요. 자동으로 읽은 결과라 다듬을 곳이 있습니다.
+- **추천 수정안** 에서 다른 헤드라인·자기소개 후보를 볼 수 있습니다.
+- **공고 분석** 에서 부족한 역량과 넣어야 할 키워드를 확인하세요.
+
+고친 뒤에는 **선택한 파일 만들기** 를 다시 누르면 새 내용으로 만들어집니다.
 """)
-
-    if st.session_state.get("resume_intro"):
-        if st.button("자기소개를 이력서 원문 그대로 되돌리기"):
-            t["intro"] = st.session_state["resume_intro"]
-            C.dirty()
-            C.bump()
-            st.rerun()
+        if st.session_state.get("resume_intro"):
+            if st.button("자기소개를 이력서 원문 그대로 되돌리기"):
+                t["intro"] = st.session_state["resume_intro"]
+                C.dirty()
+                C.bump()
+                st.rerun()
 
 
 # ---------------------------------------------------------------- 진입점
@@ -280,3 +287,10 @@ def render():
     if _review_step():
         st.divider()
     _build_step()
+
+    # 내려받기는 반드시 맨 아래에서 그린다.
+    # 위쪽 입력칸이 그려지면서 문서를 고치므로, 그보다 먼저 그리면
+    # 방금 고친 내용이 빠진 파일을 내주게 된다.
+    if st.session_state.get("built"):
+        st.divider()
+        exports.download_block(prefix="auto")
